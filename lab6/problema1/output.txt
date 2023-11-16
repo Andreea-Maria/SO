@@ -1,0 +1,5 @@
+numar litere mici: $d
+numar litere mari: 0
+numarcifre: 0
+numar aparitii caracter: 0
+dimensiune fisier: 0
