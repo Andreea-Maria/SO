@@ -1,0 +1,8 @@
+nume fisier: poza.bmp
+ dimensiune: 219634
+ identificatorul utilizatorului :0
+ timpul ultimei modificari: 1701008334 
+ contorul de legaturi : 1
+ drepturi de acces user: RW-
+ drepturi de acces grup: R--
+ drepturi de acces altii: R--
