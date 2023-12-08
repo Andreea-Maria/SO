@@ -32,8 +32,8 @@ void proceseaza_fisier_bmp(char *cale_fisier, int stat_fd) {
         afiseaza_eroare("Eroare la citirea header-ului BMP"); //daca nr de octeti citit este diferit de dimensiunea care trebuie sa o aiba header-ul afiseaza mesaj de eroare
     }
 
-    int latime = *(int*)&header[18]; //adresa de memorie a celui de-al 19-lea octet din header, care reprezinta inceputul informatiilor despre latimea imaginii . Adresa o convertimla int
-    int inaltime = *(int*)&header[22];//adresa de mem a celui de-al  23-lea octet , care repr inceputul informatiilor despre inaltime
+    int latime = (int)&header[18]; //adresa de memorie a celui de-al 19-lea octet din header, care reprezinta inceputul informatiilor despre latimea imaginii . Adresa o convertimla int
+    int inaltime = (int)&header[22];//adresa de mem a celui de-al  23-lea octet , care repr inceputul informatiilor despre inaltime
 
     // Creeaza sirul pentru drepturile de acces
     char drepturi_acces[10];
@@ -44,7 +44,7 @@ void proceseaza_fisier_bmp(char *cale_fisier, int stat_fd) {
 
     // Creeaza sirul formatat si il scrie in fisier
     char buffer_statistic[256];     //scrierea fisierului de statistica
-    sprintf(buffer_statistic,
+    sprintf(buffer_statistic,       //stocam informatia in bufferul specificat pentru afisare
             "nume fisier: %s\n"
             "inaltime: %d\n"
             "latime: %d\n"
@@ -56,7 +56,7 @@ void proceseaza_fisier_bmp(char *cale_fisier, int stat_fd) {
             "drepturi de acces grup: %c%c%c\n"
             "drepturi de acces altii: %c%c%c\n",
             cale_fisier, inaltime, latime,
-            lseek(bmp_fd, 0, SEEK_END),
+            lseek(bmp_fd, 0, SEEK_END),     //schimbam pozitia curenta de scriere a unui fisier deschis, si anume incepe de la sfarsitul fisierului
             0, 0, 0, // Valori temporare
             drepturi_acces,
             (header[14] & 4) ? 'R' : '-',
@@ -83,6 +83,7 @@ void proceseaza_intrare(char *nume_intrare, char *cale_parinte, int stat_fd) {
     struct stat file_stat;
     if (lstat(cale_completa, &file_stat) == -1) {
         afiseaza_eroare("Eroare la obtinerea informatiilor despre fisier");
+        exit(EXIT_FAILURE);
     }
 
     char buffer_statistic[256];
@@ -97,11 +98,14 @@ void proceseaza_intrare(char *nume_intrare, char *cale_parinte, int stat_fd) {
                     "identificatorul utilizatorului: %d\n"
                     "timpul ultimei modificari: %ld\n"
                     "contorul de legaturi: %ld\n"
-                    "drepturi de acces user: %s\n"
+                    "drepturi de acces user: %c%c%c\n"
                     "drepturi de acces grup: %c%c%c\n"
                     "drepturi de acces altii: %c%c%c\n",
-                    nume_intrare, (long)file_stat.st_size, (int)file_stat.st_uid,
-                    file_stat.st_mtime, (long)file_stat.st_nlink,
+                    nume_intrare, 
+                    (long)file_stat.st_size, 
+                    (int)file_stat.st_uid,
+                    (long)file_stat.st_mtime, 
+                    (long)file_stat.st_nlink,
                     (file_stat.st_mode & S_IRUSR) ? 'R' : '-',
                     (file_stat.st_mode & S_IWUSR) ? 'W' : '-',
                     (file_stat.st_mode & S_IXUSR) ? 'X' : '-',
@@ -112,11 +116,11 @@ void proceseaza_intrare(char *nume_intrare, char *cale_parinte, int stat_fd) {
                     (file_stat.st_mode & S_IWOTH) ? 'W' : '-',
                     (file_stat.st_mode & S_IXOTH) ? 'X' : '-');
         }
-    } else if (S_ISDIR(file_stat.st_mode)) {
+    } else if (S_ISDIR(file_stat.st_mode)) {        //verifica daca este director
         sprintf(buffer_statistic,
                 "nume director: %s\n"
                 "identificatorul utilizatorului: %d\n"
-                "drepturi de acces user: %s\n"
+                "drepturi de acces user: %c%c%c\n"
                 "drepturi de acces grup: %c%c%c\n"
                 "drepturi de acces altii: %c%c%c\n",
                 nume_intrare, (int)file_stat.st_uid,
@@ -129,13 +133,44 @@ void proceseaza_intrare(char *nume_intrare, char *cale_parinte, int stat_fd) {
                 (file_stat.st_mode & S_IROTH) ? 'R' : '-',
                 (file_stat.st_mode & S_IWOTH) ? 'W' : '-',
                 (file_stat.st_mode & S_IXOTH) ? 'X' : '-');
-    } else if (S_ISLNK(file_stat.st_mode)) {
-        //
+    } else if (S_ISLNK(file_stat.st_mode)) {    //verifica daca este legatura simbolica
+        struct stat link_target_stat;
+        if (lstat(cale_completa, &link_target_stat) == -1) {
+            perror("Eroare la obtinerea informatiilor despre link-ul simbolic");
+            exit(EXIT_FAILURE);
+        }
+
+        if (S_ISREG(link_target_stat.st_mode)) {
+            // Construiește și scrie în fișierul statistica.txt
+            char buffer_statistic[256];
+            sprintf(buffer_statistic,
+                    "nume legatura: %s\n"
+                    "dimensiune: %ld\n"
+                    "dimensiune fisier: %ld\n"
+                    "drepturi de acces user: %c%c%c\n"
+                    "drepturi de acces grup: %c%c%c\n"
+                    "drepturi de acces altii: %c%c%c\n",
+                     nume_intrare, 
+                     (long)file_stat.st_size, 
+                    (file_stat.st_mode & S_IRUSR) ? 'R' : '-',
+                    (file_stat.st_mode & S_IWUSR) ? 'W' : '-',
+                    (file_stat.st_mode & S_IXUSR) ? 'X' : '-',
+                    (file_stat.st_mode & S_IRGRP) ? 'R' : '-',
+                    (file_stat.st_mode & S_IWGRP) ? 'W' : '-',
+                    (file_stat.st_mode & S_IXGRP) ? 'X' : '-',
+                    (file_stat.st_mode & S_IROTH) ? 'R' : '-',
+                    (file_stat.st_mode & S_IWOTH) ? 'W' : '-',
+                    (file_stat.st_mode & S_IXOTH) ? 'X' : '-');
+            if (write(stat_fd, buffer_statistic, strlen(buffer_statistic)) == -1) {
+                perror("Eroare la scrierea în fișierul statistica");
+                exit(EXIT_FAILURE);
+            }
+        }
     }
 
     // Scrie in fisierul statistic.txt
     if (write(stat_fd, buffer_statistic, strlen(buffer_statistic)) == -1) {
-        afiseaza_eroare("Eroare la scrierea in fisierul statistic");
+        afiseaza_eroare("Eroare la scrierea in fisierul statistica");
     }
 }
 

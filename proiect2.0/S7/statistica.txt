@@ -1,0 +1,8 @@
+nume fisier: Test.txt
+dimensiune: 189
+identificatorul utilizatorului: 1000
+timpul ultimei modificari: 1701982301
+contorul de legaturi: 1
+drepturi de acces user: RW-
+drepturi de acces grup: R--
+drepturi de acces altii: R--
