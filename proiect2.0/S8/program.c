@@ -47,12 +47,13 @@ void conversieGri(char *cale_fisier)
             unsigned char pixel[3];
             if(read(bmp_fd,pixel,sizeof(pixel))!=sizeof(pixel))
             {
+                printf("Citirea pixelilor s-a incheiat cu succes.\n");
                 afiseaza_eroare("Eroare la citirea pixelilor");
             }
             //conventie BGR(albastru-verde-rosu)
             unsigned char gri=(unsigned char)(0.299*pixel[2]+0.587*pixel[1]+0.114*pixel[0]);
             
-            lseek(bmp_fd,-3,SEEK_SET);//mutam cursorul cu 3 octeti pentru a rescrie
+            lseek(bmp_fd,-3,SEEK_CUR);//mutam cursorul cu 3 octeti pentru a rescrie
             //rescrie pixeli
             write(bmp_fd, &gri, sizeof(gri));
             write(bmp_fd, &gri, sizeof(gri));
@@ -126,7 +127,7 @@ void proceseaza_fisier_bmp(char *cale_fisier, int stat_fd)
 
     free(buffer_statistic);
 
-  /* pid_t pid_fiu = fork();
+     pid_t pid_fiu = fork();//al doilea proces pentru imaginile bmp
     if(pid_fiu==-1){
         afiseaza_eroare("Eroare creare proces fiu pt conversia img");
     } else if(pid_fiu==0){
@@ -140,7 +141,7 @@ void proceseaza_fisier_bmp(char *cale_fisier, int stat_fd)
     if(waitpid(pid_fiu,&status,0)==-1){
         perror("Eroare la waitpid");
         exit(EXIT_FAILURE);
-    }*/
+    }
     
     // Inchide fisierul BMP
     if (close(bmp_fd) == -1) 
