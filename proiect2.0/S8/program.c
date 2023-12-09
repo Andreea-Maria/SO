@@ -126,7 +126,7 @@ void proceseaza_fisier_bmp(char *cale_fisier, int stat_fd)
 
     free(buffer_statistic);
 
-    pid_t pid_fiu = fork();
+  /* pid_t pid_fiu = fork();
     if(pid_fiu==-1){
         afiseaza_eroare("Eroare creare proces fiu pt conversia img");
     } else if(pid_fiu==0){
@@ -135,12 +135,12 @@ void proceseaza_fisier_bmp(char *cale_fisier, int stat_fd)
         exit(EXIT_SUCCESS);
     }
 
-    //asteapta procesul fiu
+   //asteapta procesul fiu
     int status;
     if(waitpid(pid_fiu,&status,0)==-1){
         perror("Eroare la waitpid");
         exit(EXIT_FAILURE);
-    }
+    }*/
     
     // Inchide fisierul BMP
     if (close(bmp_fd) == -1) 
@@ -261,7 +261,7 @@ void proceseaza_intrare(char *nume_intrare, char *cale_parinte, int stat_fd) {
 
     if (pid == -1) 
     {
-        perror("Eroare la fork");
+        perror("Eroare la crearea procesului fiu.");
         exit(EXIT_FAILURE);
     } 
     else if (pid == 0) // Proces copil
@@ -291,6 +291,8 @@ void proceseaza_intrare(char *nume_intrare, char *cale_parinte, int stat_fd) {
         {
             proceseaza_legatura_simbolica(cale_completa, nume_intrare, file_stat, stat_fd);
         }
+
+        printf("S-a incheiat procesul cu pid-ul %d ",getpid());
 
         exit(EXIT_SUCCESS);
     } 
