@@ -21,6 +21,49 @@ void afiseaza_utilizare()
     exit(EXIT_FAILURE);
 }
 
+void conversieGri(char *cale_fisier)
+{
+    int bmp_fd = open(cale_fisier,O_RDWR); //deschidem fisierul pentru citire si scriere
+    if (bmp_fd == -1) 
+    {
+        afiseaza_eroare("Eroare la deschiderea fisierului BMP"); //daca nu se deschide,afisam eroare
+    }
+
+    // Citeste dimensiunile imaginii BMP din header
+    unsigned char header[54]; // Header BMP are 54 de octeti
+    if (read(bmp_fd, header, sizeof(header)) != sizeof( header))
+    {   //incerc sa citesc continutul header-ului (54octeti) din fisierul descriptor bmp_fd
+        afiseaza_eroare("Eroare la citirea header-ului BMP"); //daca nr de octeti citit este diferit de dimensiunea care trebuie sa o aiba header-ul afiseaza mesaj de eroare
+    }
+
+    int latime = (int)&header[18]; //adresa de memorie a celui de-al 19-lea octet din header, care reprezinta inceputul informatiilor despre latimea imaginii . Adresa o convertimla int
+    int inaltime  = (int)&header[22];//adresa de mem a celui de-al  23-lea octet , care repr inceputul informatiilor despre inaltime
+
+    //parcurgere pixeli
+    for(int i=0;i<inaltime;i++)
+    {
+        for(int j=0;j<latime;j++)
+        {
+            unsigned char pixel[3];
+            if(read(bmp_fd,pixel,sizeof(pixel))!=sizeof(pixel))
+            {
+                afiseaza_eroare("Eroare la citirea pixelilor");
+            }
+            //conventie BGR(albastru-verde-rosu)
+            unsigned char gri=(unsigned char)(0.299*pixel[2]+0.587*pixel[1]+0.114*pixel[0]);
+            
+            lseek(bmp_fd,-3,SEEK_SET);//mutam cursorul cu 3 octeti pentru a rescrie
+            //rescrie pixeli
+            write(bmp_fd, &gri, sizeof(gri));
+            write(bmp_fd, &gri, sizeof(gri));
+            write(bmp_fd, &gri, sizeof(gri));
+        }
+    }
+
+    //inchide bmp
+    close(bmp_fd);
+}
+
 void proceseaza_fisier_bmp(char *cale_fisier, int stat_fd) 
 {
     // Deschide fisierul BMP in modul de citire
@@ -48,7 +91,12 @@ void proceseaza_fisier_bmp(char *cale_fisier, int stat_fd)
             (header[16] & 1) ? 'X' : '-');      //bitul 1(adica 2 la puterea 0) repr dreptul de executie
 
     // Creeaza sirul formatat si il scrie in fisier
-    char buffer_statistic[256];     //scrierea fisierului de statistica
+    char *buffer_statistic = (char *)malloc(256);     //scrierea fisierului de statistica
+     if (buffer_statistic == NULL)
+    {
+        afiseaza_eroare("Eroare la alocarea memoriei pentru bufferul statistic");
+    }
+
     sprintf(buffer_statistic,       //stocam informatia in bufferul specificat pentru afisare
             "nume fisier: %s\n"
             "inaltime: %d\n"
@@ -76,6 +124,24 @@ void proceseaza_fisier_bmp(char *cale_fisier, int stat_fd)
         afiseaza_eroare("Eroare la scrierea in fisierul statistic"); //afisam eroare in cazul in care nu se poate scrie fisierul
     }
 
+    free(buffer_statistic);
+
+    pid_t pid_fiu = fork();
+    if(pid_fiu==-1){
+        afiseaza_eroare("Eroare creare proces fiu pt conversia img");
+    } else if(pid_fiu==0){
+        //proces fiu
+        conversieGri(cale_fisier);
+        exit(EXIT_SUCCESS);
+    }
+
+    //asteapta procesul fiu
+    int status;
+    if(waitpid(pid_fiu,&status,0)==-1){
+        perror("Eroare la waitpid");
+        exit(EXIT_FAILURE);
+    }
+    
     // Inchide fisierul BMP
     if (close(bmp_fd) == -1) 
     {
@@ -118,7 +184,7 @@ void proceseaza_fisier_txt(char *nume_intrare,struct stat file_stat, int stat_fd
 }
 
 void proceseaza_tip_director(char *nume_intrare,struct stat file_stat, int stat_fd)
-{   
+{  
     // Creeaza sirul formatat si il scrie in fisier
     char buffer_statistic[256]; //stocam informatia in bufferul specificat pentru afisare
     sprintf(buffer_statistic, 

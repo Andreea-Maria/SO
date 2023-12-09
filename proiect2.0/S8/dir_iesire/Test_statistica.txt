@@ -1,10 +1,10 @@
 nume fisier: Test/imagine_1.bmp
-inaltime: 912904902
-latime: 912904898
+inaltime: -349993754
+latime: -349993758
 dimensiune: 219634
 identificatorul utilizatorului: 0
 timpul ultimei modificari: 0
 contorul de legaturi: 0
 drepturi de acces user: ---
 drepturi de acces grup: ---
-drepturi de acces altii:
+drepturi de acces alti
